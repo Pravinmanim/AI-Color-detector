@@ -1,0 +1,52 @@
+{
+  "model_file": "residual_km_mlp_v1_20261006_104322.pt",
+  "km_baseline": {
+    "mean_de00": 1.159106027782211,
+    "median_de00": 0.8681896277173526,
+    "p95_de00": 2.548512651984733,
+    "p99_de00": 2.9103275437867526,
+    "max_de00": 3.251368745324446,
+    "pct_under_1": 56.119791666666664,
+    "pct_under_2": 77.734375,
+    "n_samples": 768,
+    "quality_bands": {
+      "Excellent": 431,
+      "Very close": 166,
+      "Needs minor correction": 171,
+      "Noticeable difference": 0,
+      "Large difference": 0
+    }
+  },
+  "residual_km_mlp": {
+    "mean_de00": 1.0540915717535417,
+    "median_de00": 1.0183706613882788,
+    "p95_de00": 1.7762484337952817,
+    "p99_de00": 2.092278655299512,
+    "max_de00": 2.367269590175313,
+    "pct_under_1": 47.78645833333333,
+    "pct_under_2": 98.30729166666666,
+    "n_samples": 768,
+    "quality_bands": {
+      "Excellent": 367,
+      "Very close": 388,
+      "Needs minor correction": 13,
+      "Noticeable difference": 0,
+      "Large difference": 0
+    }
+  },
+  "improvement": {
+    "mean_de00_reduction": 0.10501445602866921,
+    "pct_under_1_improvement": -8.333333333333336
+  },
+  "config": {
+    "regenerate_data": false,
+    "n_samples": 5000,
+    "hidden_dim": 64,
+    "epochs": 200,
+    "batch_size": 64,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "patience": 15,
+    "model_tag": "v1"
+  }
+}

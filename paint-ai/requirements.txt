@@ -1,0 +1,27 @@
+# paint-ai pinned requirements
+# Python 3.11+
+
+# ── Testing ──────────────────────────────
+pytest==7.4.4
+pytest-cov==4.1.0
+
+# ── Core ML (Phase 3+) ──────────────────
+numpy==1.26.4
+scipy==1.12.0
+torch==2.2.1
+scikit-learn==1.4.1
+xgboost==2.0.3
+optuna==3.5.0
+
+# ── API (Phase 9) ───────────────────────
+fastapi==0.109.2
+uvicorn==0.27.1
+pydantic==2.6.1
+
+# ── Vision (Phase 8) ────────────────────
+Pillow==10.2.0
+# opencv-python==4.9.0.80  # uncomment if needed for advanced vision
+
+# ── Data / Utilities ────────────────────
+pandas==2.2.0
+matplotlib==3.8.3

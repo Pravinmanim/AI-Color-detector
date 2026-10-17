@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint AI — Smart Physics-Informed Paint Formulation</title>
+    <meta name="description" content="AI-powered paint recipe formulator using Kubelka-Munk physics and neural network correction.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="app-layout">
+        <!-- Main Card Container -->
+        <main class="glass-card" id="main-card">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Trained Residual-KM Neural Network Active</span>
+                </div>
+                <h1 class="app-title">Paint AI <span class="gradient-text">Studio</span></h1>
+                <p class="app-subtitle">Physics-informed R:B:Y:W recipe formulation &amp; closed-loop batch correction</p>
+            </header>
+
+            <!-- Input Tabs -->
+            <nav class="tab-nav" aria-label="Input Method">
+                <button class="tab-btn active" id="tab-picker-btn" onclick="switchTab('picker-tab')">
+                    <span class="tab-icon">🎨</span> Visual Picker
+                </button>
+                <button class="tab-btn" id="tab-hex-btn" onclick="switchTab('hex-tab')">
+                    <span class="tab-icon">🔤</span> Hex &amp; Name
+                </button>
+                <button class="tab-btn" id="tab-image-btn" onclick="switchTab('image-tab')">
+                    <span class="tab-icon">📷</span> Image Upload
+                </button>
+                <button class="tab-btn" id="tab-camera-btn" onclick="switchTab('camera-tab')">
+                    <span class="tab-icon">📹</span> Live Camera
+                </button>
+            </nav>
+
+            <!-- Tab 1: Visual Color Picker -->
+            <section id="picker-tab" class="tab-panel active">
+                <div class="picker-container">
+                    <div class="color-picker-button-container">
+                        <label for="native-color-picker" class="btn-picker">
+                            <span class="btn-picker-icon">🎨</span>
+                            <span class="btn-picker-text">Click to Pick Color</span>
+                            <input type="color" id="native-color-picker" value="#3b82f6" oninput="onColorPickerChange(event)">
+                        </label>
+                    </div>
+                    <div class="picker-readouts">
+                        <div class="readout-chip" id="chip-hex">HEX: #3b82f6</div>
+                        <div class="readout-chip" id="chip-rgb">RGB: 59, 130, 246</div>
+                    </div>
+                </div>
+
+                <!-- Preset Quick Swatches -->
+                <div class="presets-container">
+                    <span class="presets-title">Popular Studio Swatches:</span>
+                    <div class="presets-grid">
+                        <button class="preset-chip" style="--c: #8B8565" onclick="setPresetColor('#8B8565', 'Olive Ochre')">Olive Ochre</button>
+                        <button class="preset-chip" style="--c: #C3B091" onclick="setPresetColor('#C3B091', 'Warm Khaki')">Warm Khaki</button>
+                        <button class="preset-chip" style="--c: #D4A373" onclick="setPresetColor('#D4A373', 'Ochre Sand')">Ochre Sand</button>
+                        <button class="preset-chip" style="--c: #E6D0C2" onclick="setPresetColor('#E6D0C2', 'Alabaster Tint')">Alabaster Tint</button>
+                        <button class="preset-chip" style="--c: #9C6644" onclick="setPresetColor('#9C6644', 'Raw Umber')">Raw Umber</button>
+                        <button class="preset-chip" style="--c: #E07A5F" onclick="setPresetColor('#E07A5F', 'Terracotta')">Terracotta</button>
+                        <button class="preset-chip" style="--c: #1D3557" onclick="setPresetColor('#1D3557', 'Navy Blue')">Navy Blue</button>
+                        <button class="preset-chip" style="--c: #81B29A" onclick="setPresetColor('#81B29A', 'Sage Mist')">Sage Mist</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: Hex / Name Input -->
+            <section id="hex-tab" class="tab-panel">
+                <div class="input-form">
+                    <label for="color-input" class="field-label">Color Name or Hex Code</label>
+                    <div class="input-group">
+                        <input type="text" id="color-input" placeholder="e.g. #D2691E, terracotta, navy blue, olive" onkeydown="handleInputKey(event)">
+                        <button class="btn-action" id="analyze-btn" onclick="resolveColorInput()">Analyze</button>
+                    </div>
+                    <p class="field-hint">Supports 148+ CSS standard colors and common extended names with modifiers (e.g. "dark blue", "light coral").</p>
+                </div>
+            </section>
+
+            <!-- Tab 3: Image Upload -->
+            <section id="image-tab" class="tab-panel">
+                <div class="upload-dropzone" id="drop-zone" onclick="document.getElementById('file-upload').click()">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">
+                        <strong>Click or drag &amp; drop an image</strong>
+                        <span>Auto-detects dominant color using spatial color filtering</span>
+                    </div>
+                    <input type="file" id="file-upload" hidden accept="image/*" onchange="handleImageUpload(event)">
+                </div>
+                <div id="image-preview-container" class="image-preview-container hidden">
+                    <img id="image-preview" alt="Uploaded swatch preview">
+                    <div id="image-analyzing-overlay" class="analyzing-overlay hidden">
+                        <div class="mini-spinner"></div> Extracting color...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: Live Camera Eyedropper with Calibration -->
+            <section id="camera-tab" class="tab-panel">
+                <div class="camera-panel-container">
+                    <div class="camera-viewport-wrap" id="camera-viewport">
+                        <video id="webcam-video" autoplay playsinline muted></video>
+                        <canvas id="webcam-canvas" style="display:none;"></canvas>
+                        
+                        <!-- Center Crosshair Reticle -->
+                        <div class="camera-reticle" id="camera-reticle">
+                            <div class="reticle-box"></div>
+                            <span class="reticle-tag">Sampling Area</span>
+                        </div>
+
+                        <!-- Calibration Status Badge -->
+                        <div class="cam-calibration-badge" id="cam-calibration-badge">
+                            <span class="badge-dot"></span>
+                            <span id="calibration-text">Lighting: Auto Compensated</span>
+                        </div>
+
+                        <!-- Placeholder when webcam is off -->
+                        <div id="camera-placeholder" class="camera-placeholder">
+                            <div class="camera-icon">📷</div>
+                            <p>Point your camera at any color swatch or surface</p>
+                            <button class="btn-action" onclick="startWebcam()">Start Live Webcam</button>
+                        </div>
+                    </div>
+
+                    <!-- Lighting & White Balance Calibration Bar -->
+                    <div class="camera-calibration-bar" id="cam-calibration-controls" style="display:none;">
+                        <div class="calib-btn-group">
+                            <button class="btn-calib" id="btn-white-balance" onclick="calibrateWhitePoint()">
+                                <span class="calib-icon">⚪</span> Calibrate White Point (Hold White Paper)
+                            </button>
+                            <button class="btn-ghost-sm" id="btn-reset-calib" onclick="resetWhitePoint()">Reset</button>
+                        </div>
+
+                        <!-- Real-time Sliders for Lighting Adjustment -->
+                        <div class="camera-sliders-grid">
+                            <div class="slider-item">
+                                <label for="cam-exposure-slider">
+                                    <span>Brightness / Exposure Boost:</span>
+                                    <span class="slider-val" id="exposure-val">1.25x</span>
+                                </label>
+                                <input type="range" id="cam-exposure-slider" min="0.8" max="2.5" step="0.05" value="1.25" oninput="onExposureChange(event)">
+                            </div>
+                            <div class="slider-item">
+                                <label for="cam-saturation-slider">
+                                    <span>Vibrancy / Saturation:</span>
+                                    <span class="slider-val" id="saturation-val">1.15x</span>
+                                </label>
+                                <input type="range" id="cam-saturation-slider" min="0.8" max="2.0" step="0.05" value="1.15" oninput="onSaturationChange(event)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="camera-controls-bar">
+                        <button class="btn-action" id="btn-toggle-cam" onclick="toggleWebcam()" style="display:none;">Stop Camera</button>
+                        <button class="btn-generate" id="btn-sample-cam" onclick="sampleWebcamColor()" style="display:none;">
+                            <span>Capture Reticle Color &amp; RGB</span>
+                        </button>
+                    </div>
+
+                    <div class="camera-live-readout" id="cam-readout-row" style="display:none;">
+                        <div class="readout-chip" id="cam-rgb-chip">RGB: (--, --, --)</div>
+                        <div class="readout-chip" id="cam-hex-chip">HEX: #------</div>
+                        <div class="readout-chip" id="cam-name-chip">Name: --</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Target Color Display Stage: Interactive Vibrant Color Card -->
+            <section class="target-stage" id="target-stage">
+                <div class="interactive-color-card" id="interactive-card">
+                    <div class="card-ambient-aura" id="card-aura"></div>
+                    
+                    <div class="card-top-row">
+                        <div class="swatch-large-wrap">
+                            <div class="swatch-large" id="target-swatch" style="background-color: #3b82f6;"></div>
+                            <span class="swatch-sheen"></span>
+                        </div>
+
+                        <div class="card-details">
+                            <div class="card-header-flex">
+                                <div class="target-name" id="target-name-display">Dodger Blue</div>
+                                <span class="tag-status" id="color-tone-badge">Vibrant Tone</span>
+                            </div>
+
+                            <div class="card-codes-row">
+                                <div class="tag-hex-pill">
+                                    <span class="code-label">HEX</span>
+                                    <span class="code-value" id="target-hex-display">#3B82F6</span>
+                                    <button class="btn-copy" onclick="copyHex()" title="Copy Hex">📋</button>
+                                </div>
+                                <div class="tag-lab-pill">
+                                    <span class="code-label">CIELAB</span>
+                                    <span class="code-value" id="target-lab-display">L*: 55.3 | a*: 9.2 | b*: -65.3</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive RGB Sliders / Channel Fine-Tuner -->
+                    <div class="interactive-channels-box">
+                        <div class="channels-title">
+                            <span>Interactive RGB Channels &amp; Lighting Fine-Tuning:</span>
+                            <button class="btn-quick-fix" onclick="autoBrightenGloomyColor()">☀️ Boost Gloomy Color</button>
+                        </div>
+                        <div class="channels-grid">
+                            <div class="channel-row">
+                                <span class="channel-lbl red-lbl">R</span>
+                                <input type="range" id="channel-r" min="0" max="255" value="59" oninput="onChannelChange()">
+                                <input type="number" id="num-r" min="0" max="255" value="59" oninput="onChannelNumChange()">
+                            </div>
+                            <div class="channel-row">
+                                <span class="channel-lbl green-lbl">G</span>
+                                <input type="range" id="channel-g" min="0" max="255" value="130" oninput="onChannelChange()">
+                                <input type="number" id="num-g" min="0" max="255" value="130" oninput="onChannelNumChange()">
+                            </div>
+                            <div class="channel-row">
+                                <span class="channel-lbl blue-lbl">B</span>
+                                <input type="range" id="channel-b" min="0" max="255" value="246" oninput="onChannelChange()">
+                                <input type="number" id="num-b" min="0" max="255" value="246" oninput="onChannelNumChange()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-generate" id="generate-btn" onclick="generateRecipe()">
+                    <span class="btn-icon">⚡</span>
+                    <span id="generate-btn-text">Formulate AI Recipe (High-Precision Mode)</span>
+                </button>
+            </section>
+
+            <!-- Results Section (Populated upon Formulation) -->
+            <section class="results-section hidden" id="results-section">
+                <!-- Swatch Comparison -->
+                <div class="comparison-card">
+                    <h2 class="section-title">Color Match Analysis</h2>
+                    <div class="comparison-grid">
+                        <div class="swatch-box">
+                            <div class="swatch-preview" id="cmp-target-swatch"></div>
+                            <span class="swatch-label">Target Goal</span>
+                            <span class="swatch-code" id="cmp-target-hex">--</span>
+                        </div>
+
+                        <div class="delta-display">
+                            <div class="delta-pill" id="delta-pill">
+                                <span class="delta-number" id="de00-val">--</span>
+                                <span class="delta-unit">ΔE₀₀</span>
+                            </div>
+                            <div class="match-quality" id="quality-label">Analyzing...</div>
+                            <div class="delta-subtext" id="status-val">Standard</div>
+                        </div>
+
+                        <div class="swatch-box">
+                            <div class="swatch-preview" id="cmp-pred-swatch"></div>
+                            <span class="swatch-label">AI Mixed Result</span>
+                            <span class="swatch-code" id="cmp-pred-hex">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Gram Dispenser (Compact Sleek Card) -->
+                <div class="batch-scale-card">
+                    <div class="batch-compact-header">
+                        <div class="batch-compact-title">
+                            <h3>Recipe Proportions &amp; Mass</h3>
+                        </div>
+                        <div class="batch-compact-controls">
+                            <div class="batch-presets">
+                                <button class="size-btn" onclick="setBatchTotal(50)">50g</button>
+                                <button class="size-btn active" onclick="setBatchTotal(100)">100g</button>
+                                <button class="size-btn" onclick="setBatchTotal(250)">250g</button>
+                                <button class="size-btn" onclick="setBatchTotal(500)">500g</button>
+                                <button class="size-btn" onclick="setBatchTotal(1000)">1kg</button>
+                            </div>
+                            <div class="batch-input-wrap">
+                                <input type="number" id="batch-total-input" value="100" min="1" max="10000" oninput="updateBatchMasses()">
+                                <span class="unit">g</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pigment Breakdown Grid (Fluid & Compact) -->
+                    <div class="recipe-bars-list" id="recipe-grid">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Closed-Loop Batch Correction Panel -->
+                <div class="correction-card">
+                    <div class="correction-header">
+                        <div class="correction-icon">⚖️</div>
+                        <div>
+                            <h3>Closed-Loop Batch Correction</h3>
+                            <p>Mixed the batch and it's slightly off? Enter current amounts to find add-only corrections without wasting paint.</p>
+                        </div>
+                    </div>
+
+                    <div class="correction-prefill-bar">
+                        <button class="btn-ghost" onclick="prefillCorrectionWithRecipe()">Use Recommended Recipe As Starting Amounts</button>
+                    </div>
+
+                    <div class="correction-inputs-grid">
+                        <div class="input-cell">
+                            <label for="corr-r"><span class="dot dot-red"></span> Red (g)</label>
+                            <input type="number" id="corr-r" step="0.1" min="0" placeholder="0.0">
+                        </div>
+                        <div class="input-cell">
+                            <label for="corr-b"><span class="dot dot-blue"></span> Blue (g)</label>
+                            <input type="number" id="corr-b" step="0.1" min="0" placeholder="0.0">
+                        </div>
+                        <div class="input-cell">
+                            <label for="corr-y"><span class="dot dot-yellow"></span> Yellow (g)</label>
+                            <input type="number" id="corr-y" step="0.1" min="0" placeholder="0.0">
+                        </div>
+                        <div class="input-cell">
+                            <label for="corr-w"><span class="dot dot-white"></span> White (g)</label>
+                            <input type="number" id="corr-w" step="0.1" min="0" placeholder="0.0">
+                        </div>
+                    </div>
+
+                    <button class="btn-correct" id="correct-btn" onclick="calculateCorrection()">
+                        <span>Calculate Additions (Add-Only)</span>
+                    </button>
+
+                    <!-- Correction Results Area -->
+                    <div id="correction-results" class="correction-results hidden">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js?v=2"></script>
+</body>
+</html>
